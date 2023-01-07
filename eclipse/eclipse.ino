@@ -9,11 +9,15 @@
 // brightness levels are 0-255
 #define BUTTON_BRIGHTNESS 64
 #define PLAYER_BRIGHTNESS 32
+#define PASSED_BRIGHTNESS 4
 
 #define MAIN_BUTTON_PIN 2
+#define UNDO_BUTTON_PIN 3
 #define DBL_PRESS_DEBOUNCE 250
 
-enum TrackerMode { numPlayerSelect, colorAssign, turnTracker };
+enum TrackerMode { numPlayerSelect,
+                   colorAssign,
+                   turnTracker };
 
 struct TurnState {
   byte prevPlayer;
@@ -41,8 +45,9 @@ struct {
 CRGB leds[NEOPIXEL_COUNT];
 
 EasyButton mainButton(MAIN_BUTTON_PIN);
+EasyButton undoButton(UNDO_BUTTON_PIN);
 
-const CRGB playerColors[] = {CRGB::Blue, CRGB::Red, CRGB::Green, CRGB::White, CRGB::Yellow, CRGB::Purple};
+const CRGB playerColors[] = { CRGB::Blue, CRGB::Red, CRGB::Green, CRGB::White, CRGB::Yellow, CRGB::Purple };
 
 int numPlayers = 6;
 TrackerMode currTrackerMode = turnTracker;
@@ -51,11 +56,13 @@ unsigned long lastButtonPress = 0;
 
 void setup() {
   // Serial.begin(9600);
-  FastLED.addLeds<NEOPIXEL, NEOPIXEL_PIN>(leds, NEOPIXEL_COUNT);
+  FastLED.addLeds<NEOPIXEL, NEOPIXEL_PIN>(leds, NEOPIXEL_COUNT).setCorrection(TypicalLEDStrip);
   showBlank();
   mainButton.begin();
   mainButton.onPressed(handleMainSinglePress);
   mainButton.onSequence(2, DBL_PRESS_DEBOUNCE, handleMainDoublePress);
+  undoButton.begin();
+  undoButton.onPressed(handleUndoSinglePress);
 
   initTurnHistory();
   showTurnTracker();
@@ -90,7 +97,7 @@ void handleMainSinglePress() {
 
   lastButtonPress = now;
 
-  switch(currTrackerMode) {
+  switch (currTrackerMode) {
     case turnTracker:
       nextPlayer();
       break;
@@ -98,15 +105,23 @@ void handleMainSinglePress() {
 }
 
 void handleMainDoublePress() {
-  switch(currTrackerMode) {
+  switch (currTrackerMode) {
     case turnTracker:
       passPrevPlayer();
       break;
   }
 }
 
+void handleUndoSinglePress() {
+  switch (currTrackerMode) {
+    case turnTracker:
+      trackerUndo();
+      break;
+  }
+}
+
 void showBlank() {
-  for(int led = 0; led < NEOPIXEL_COUNT; led++) {
+  for (int led = 0; led < NEOPIXEL_COUNT; led++) {
     leds[led] = CRGB::Black;
   }
   FastLED.show();
@@ -118,13 +133,13 @@ void showTurnTracker() {
   leds[NP_MAIN_BUTTON] = playerColors[turnState.activePlayer];
   leds[NP_MAIN_BUTTON].nscale8(BUTTON_BRIGHTNESS);
 
-  for(int i = 0; i < numPlayers; i++) {
+  for (int i = 0; i < numPlayers; i++) {
     int led = i + NP_PLAYER_START;
     byte player = turnState.playOrder[i];
     leds[led] = playerColors[player];
 
     if (isPlayerPassed(turnState, player)) {
-      leds[led].nscale8(2);
+      leds[led].nscale8(PASSED_BRIGHTNESS);
     } else {
       leds[led].nscale8(PLAYER_BRIGHTNESS);
     }
@@ -140,7 +155,7 @@ void nextPlayer() {
   do {
     newState.playIndex = (newState.playIndex + 1) % numPlayers;
     newState.activePlayer = newState.playOrder[newState.playIndex];
-  } while(isPlayerPassed(newState, newState.activePlayer));
+  } while (isPlayerPassed(newState, newState.activePlayer));
 
   // debugCurrState();
   showTurnTracker();
@@ -150,13 +165,15 @@ void passPrevPlayer() {
   TurnState &newState = advanceTurnState();
   newState.passOrder[newState.numPassed] = newState.prevPlayer;
   newState.numPassed++;
-  
+
 
   if (newState.numPassed == numPlayers) {
     for (int i = 0; i < numPlayers; i++) {
       newState.playOrder[i] = newState.passOrder[i];
     }
     newState.playIndex = 0;
+    newState.prevPlayer = newState.activePlayer;
+    newState.activePlayer = newState.playOrder[0];
     newState.numPassed = 0;
   }
 
@@ -178,11 +195,28 @@ bool isPlayerPassed(TurnState &turnState, byte player) {
   return false;
 }
 
-TurnState& getCurrentState() {
+void trackerUndo() {
+  if (turnHistory.historyLength == 0) {
+    return;
+  }
+
+  int newState;
+  if (turnHistory.currentState - 1 < 0) {
+    newState = TURN_HISTORY_LENGTH - 1;
+  } else {
+    newState = turnHistory.currentState - 1;
+  }
+
+  turnHistory.currentState = newState;
+  turnHistory.historyLength--;
+  showTurnTracker();
+}
+
+TurnState &getCurrentState() {
   return turnHistory.history[turnHistory.currentState];
 }
 
-TurnState& advanceTurnState() {
+TurnState &advanceTurnState() {
   int nextStateIdx = (turnHistory.currentState + 1) % TURN_HISTORY_LENGTH;
   turnHistory.history[nextStateIdx] = turnHistory.history[turnHistory.currentState];
   turnHistory.currentState = nextStateIdx;
@@ -195,16 +229,17 @@ TurnState& advanceTurnState() {
 }
 
 void initTurnHistory() {
-  for (int i; i < TURN_HISTORY_LENGTH; i++) {
+  for (int i = 0; i < TURN_HISTORY_LENGTH; i++) {
     turnHistory.history[i] = TurnState();
   }
   turnHistory.currentState = 0;
 
-  for (int i; i < numPlayers; i++) {
+  for (int i = 0; i < numPlayers; i++) {
     turnHistory.history[0].playOrder[i] = byte(i);
   }
 }
 
 void loop() {
   mainButton.read();
+  undoButton.read();
 }
