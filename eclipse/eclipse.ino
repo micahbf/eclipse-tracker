@@ -16,7 +16,7 @@
 #define DBL_PRESS_DEBOUNCE 250
 
 enum TrackerMode { numPlayerSelect,
-                   colorAssign,
+                   randomColorAssign,
                    turnTracker };
 
 struct TurnState {
@@ -49,10 +49,11 @@ EasyButton undoButton(UNDO_BUTTON_PIN);
 
 const CRGB playerColors[] = { CRGB::Blue, CRGB::Red, CRGB::Green, CRGB::White, CRGB::Yellow, CRGB::Purple };
 
-int numPlayers = 6;
-TrackerMode currTrackerMode = turnTracker;
+int numPlayers = 4;
+TrackerMode currTrackerMode = numPlayerSelect;
 
 unsigned long lastButtonPress = 0;
+unsigned long lastTick = 0;
 
 void setup() {
   // Serial.begin(9600);
@@ -65,7 +66,7 @@ void setup() {
   undoButton.onPressed(handleUndoSinglePress);
 
   initTurnHistory();
-  showTurnTracker();
+  showNumPlayerSelect();
 }
 
 // void debugCurrState() {
@@ -101,6 +102,12 @@ void handleMainSinglePress() {
     case turnTracker:
       nextPlayer();
       break;
+    case numPlayerSelect:
+      incNumPlayers();
+      break;
+    case randomColorAssign:
+      assignColor();
+      break;
   }
 }
 
@@ -108,6 +115,9 @@ void handleMainDoublePress() {
   switch (currTrackerMode) {
     case turnTracker:
       passPrevPlayer();
+      break;
+    case numPlayerSelect:
+      numPlayersConfirm();
       break;
   }
 }
@@ -125,6 +135,39 @@ void showBlank() {
     leds[led] = CRGB::Black;
   }
   FastLED.show();
+}
+
+void showNumPlayerSelect() {
+  leds[NP_MAIN_BUTTON] = CRGB::Plum;
+  leds[NP_MAIN_BUTTON].nscale8(BUTTON_BRIGHTNESS);
+
+  for (int i = 0; i < 6; i++) {
+    int led = i + NP_PLAYER_START;
+    if (i < numPlayers) {
+      leds[led] = CRGB::Plum;
+      leds[led].nscale8(PLAYER_BRIGHTNESS);
+    } else {
+      leds[led] = CRGB::Black;
+    }
+  }
+  FastLED.show();
+}
+
+void showColorAssign() {
+  TurnState &turnState = getCurrentState();
+
+  leds[NP_MAIN_BUTTON] = playerColors[turnState.activePlayer];
+  leds[NP_MAIN_BUTTON].nscale8(BUTTON_BRIGHTNESS);
+
+  for (int i = 0; i < numPlayers; i++) {
+    int led = i + NP_PLAYER_START;
+    if (i <= turnState.activePlayer) {
+      leds[led] = playerColors[i];
+      leds[led].nscale8(PLAYER_BRIGHTNESS);
+    } else {
+      leds[led] = CRGB::Black;
+    }
+  }
 }
 
 void showTurnTracker() {
@@ -146,6 +189,65 @@ void showTurnTracker() {
   }
 
   FastLED.show();
+}
+
+void incNumPlayers() {
+  if (numPlayers == 6) {
+    numPlayers = 2;
+  } else {
+    numPlayers++;
+  }
+
+  showNumPlayerSelect();
+}
+
+void numPlayersConfirm() {
+  // undo the single last button press
+  if (numPlayers == 2) {
+    numPlayers = 6;
+  } else {
+    numPlayers--;
+  }
+
+  currTrackerMode = randomColorAssign;
+  showBlank();
+  showColorAssign();
+}
+
+void randomAssignTick() {
+  TurnState &turnState = getCurrentState();
+  byte nextColor = turnState.playOrder[turnState.playIndex];
+  bool colorTaken;
+  do {
+    colorTaken = false;
+    nextColor = nextColor == 5 ? 0 : nextColor + 1;
+
+    for (int i = 0; i < turnState.playIndex; i++) {
+      if (turnState.playOrder[i] == nextColor) {
+        colorTaken = true;
+      }
+    }
+  } while (colorTaken);
+
+  turnState.playOrder[turnState.playIndex] = nextColor;
+  leds[NP_MAIN_BUTTON] = playerColors[nextColor];
+  leds[NP_MAIN_BUTTON].nscale8(BUTTON_BRIGHTNESS);
+  leds[NP_PLAYER_START + turnState.playIndex] = playerColors[nextColor];
+  leds[NP_PLAYER_START + turnState.playIndex].nscale8(PLAYER_BRIGHTNESS);
+  FastLED.show();
+}
+
+void assignColor() {
+  TurnState &turnState = getCurrentState();
+  if (turnState.playIndex == 4 || turnState.playIndex == numPlayers - 1) {
+    currTrackerMode = turnTracker;
+    turnState.playIndex = 0;
+    turnState.activePlayer = turnState.playOrder[0];    
+    showBlank();
+    showTurnTracker();
+  } else {
+    turnState.playIndex++;
+  }
 }
 
 void nextPlayer() {
@@ -242,4 +344,10 @@ void initTurnHistory() {
 void loop() {
   mainButton.read();
   undoButton.read();
+
+  unsigned long now = millis();
+  if (currTrackerMode == randomColorAssign && now != lastTick && now % 50 == 0) {
+    randomAssignTick();
+  }
+  lastTick = now;
 }
