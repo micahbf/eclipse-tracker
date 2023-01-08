@@ -2,18 +2,20 @@
 #include <EasyButton.h>
 
 #define NEOPIXEL_PIN 6
-#define NEOPIXEL_COUNT 8
-#define NP_MAIN_BUTTON 0
-#define NP_PLAYER_START 2
+#define NEOPIXEL_COUNT 9
+#define NP_MAIN_BUTTON 8
+#define NP_PLAYER_START 0
 
 // brightness levels are 0-255
-#define BUTTON_BRIGHTNESS 64
-#define PLAYER_BRIGHTNESS 32
+#define BUTTON_BRIGHTNESS 192
+#define PLAYER_BRIGHTNESS 26
 #define PASSED_BRIGHTNESS 4
 
 #define MAIN_BUTTON_PIN 2
 #define UNDO_BUTTON_PIN 3
 #define DBL_PRESS_DEBOUNCE 250
+
+#define RANDOM_SEED_PIN 0
 
 enum TrackerMode { numPlayerSelect,
                    randomColorAssign,
@@ -35,7 +37,7 @@ struct TurnState {
   }
 };
 
-#define TURN_HISTORY_LENGTH 6
+#define TURN_HISTORY_LENGTH 10
 struct {
   TurnState history[TURN_HISTORY_LENGTH];
   int currentState;
@@ -57,6 +59,7 @@ unsigned long lastTick = 0;
 
 void setup() {
   // Serial.begin(9600);
+  randomSeed(analogRead(RANDOM_SEED_PIN));
   FastLED.addLeds<NEOPIXEL, NEOPIXEL_PIN>(leds, NEOPIXEL_COUNT).setCorrection(TypicalLEDStrip);
   showBlank();
   mainButton.begin();
@@ -191,6 +194,15 @@ void showTurnTracker() {
   FastLED.show();
 }
 
+void blinkTurnTracker() {
+  for (int i = 0; i < 8; i++) {
+    showBlank();
+    delay(75);
+    showTurnTracker();
+    delay(175);
+  }
+}
+
 void incNumPlayers() {
   if (numPlayers == 6) {
     numPlayers = 2;
@@ -237,13 +249,34 @@ void randomAssignTick() {
   FastLED.show();
 }
 
+void shufflePlayOrder() {
+  TurnState &turnState = getCurrentState();
+
+  for (int n = 0; n < 30; n++) {
+    for (int i = 0; i < numPlayers; i++) {
+      int n = random(0, numPlayers);
+      int temp = turnState.playOrder[n];
+      turnState.playOrder[n] = turnState.playOrder[i];
+      turnState.playOrder[i] = temp;
+    }
+    turnState.activePlayer = turnState.playOrder[0];
+    showTurnTracker();
+    delay(150);
+  }
+}
+
 void assignColor() {
   TurnState &turnState = getCurrentState();
-  if (turnState.playIndex == 4 || turnState.playIndex == numPlayers - 1) {
+  if (turnState.playIndex != 5) {
+    delay(3000);
+  }
+
+  if (turnState.playIndex == numPlayers - 1) {
     currTrackerMode = turnTracker;
     turnState.playIndex = 0;
-    turnState.activePlayer = turnState.playOrder[0];    
     showBlank();
+    shufflePlayOrder();
+    blinkTurnTracker();
     showTurnTracker();
   } else {
     turnState.playIndex++;
