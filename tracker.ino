@@ -2,14 +2,14 @@
 #include <EasyButton.h>
 
 #define NEOPIXEL_PIN 6
-#define NEOPIXEL_COUNT 9
-#define NP_MAIN_BUTTON 8
+#define NEOPIXEL_COUNT 7
+#define NP_MAIN_BUTTON 6
 #define NP_PLAYER_START 0
 
 // brightness levels are 0-255
 #define BUTTON_BRIGHTNESS 192
-#define PLAYER_BRIGHTNESS 26
-#define PASSED_BRIGHTNESS 4
+#define PLAYER_BRIGHTNESS 128
+#define PASSED_BRIGHTNESS 32
 
 #define MAIN_BUTTON_PIN 2
 #define UNDO_BUTTON_PIN 3
@@ -69,6 +69,7 @@ void setup() {
   undoButton.onPressed(handleUndoSinglePress);
 
   initTurnHistory();
+
   showNumPlayerSelect();
 }
 
@@ -129,6 +130,9 @@ void handleUndoSinglePress() {
   switch (currTrackerMode) {
     case turnTracker:
       trackerUndo();
+      break;
+    case randomColorAssign:
+      undoAssign();
       break;
   }
 }
@@ -261,14 +265,14 @@ void shufflePlayOrder() {
     }
     turnState.activePlayer = turnState.playOrder[0];
     showTurnTracker();
-    delay(150);
+    delay(150); 
   }
 }
 
 void assignColor() {
   TurnState &turnState = getCurrentState();
   if (turnState.playIndex != 5) {
-    delay(3000);
+    delay(2000);
   }
 
   if (turnState.playIndex == numPlayers - 1) {
@@ -281,6 +285,12 @@ void assignColor() {
   } else {
     turnState.playIndex++;
   }
+}
+
+void undoAssign() {
+  TurnState &turnState = getCurrentState();
+  leds[NP_PLAYER_START + turnState.playIndex] = CRGB::Black;
+  turnState.playIndex--;
 }
 
 void nextPlayer() {
