@@ -25,6 +25,20 @@ The tracker has a few modes, from startup:
 - After all players pass, the pass order is used to set the new play order and all players are reset
 - The undo button reverts whatever the last button press did
 
+There is also a battery check mode, which I use when charging the tracker. This is partially because I wired
+the tracker in such a way that I can't charge the battery unless it's turned on. (The battery itself is directly
+switched.)
+
+Pressing the undo button 3 times quickly will toggle battery check mode. In this mode, one light will remain on
+to show the voltage (and charge state) state of the battery:
+
+- Green >4.0V
+- Yellow 3.6V - 4.0V
+- Orange 3.4V - 3.6V
+- Red <3.4V
+
+Pressing the undo button 3 times again will return to the previous mode.
+
 ## This Repo
 
 The [tracker.ino](/tracker/tracker.ino) file is an Arduino sketch. I used an ATmega 328P based Arduino, specifically an Adafruit Feather 328P.
