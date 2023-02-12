@@ -15,11 +15,13 @@
 #define UNDO_BUTTON_PIN 3
 #define DBL_PRESS_DEBOUNCE 250
 
-#define RANDOM_SEED_PIN 0
+#define RANDOM_SEED_PIN A0
+#define VBATPIN A6
 
 enum TrackerMode { numPlayerSelect,
                    randomColorAssign,
-                   turnTracker };
+                   turnTracker,
+                   batteryMonitor };
 
 struct TurnState {
   byte prevPlayer;
@@ -37,7 +39,7 @@ struct TurnState {
   }
 };
 
-#define TURN_HISTORY_LENGTH 10
+#define TURN_HISTORY_LENGTH 20
 struct {
   TurnState history[TURN_HISTORY_LENGTH];
   int currentState;
@@ -67,6 +69,7 @@ void setup() {
   mainButton.onSequence(2, DBL_PRESS_DEBOUNCE, handleMainDoublePress);
   undoButton.begin();
   undoButton.onPressed(handleUndoSinglePress);
+  undoButton.onSequence(3, DBL_PRESS_DEBOUNCE, toggleBatteryMonitor);
 
   initTurnHistory();
 
@@ -137,6 +140,20 @@ void handleUndoSinglePress() {
   }
 }
 
+void toggleBatteryMonitor() {
+  static TrackerMode lastTrackerMode;
+
+  if (currTrackerMode == batteryMonitor) {
+    currTrackerMode = lastTrackerMode;
+    lastTrackerMode = batteryMonitor;
+  } else {
+    lastTrackerMode = currTrackerMode;
+    currTrackerMode = batteryMonitor;
+  }
+  showBlank();
+  showCurrentMode();
+}
+
 void showBlank() {
   for (int led = 0; led < NEOPIXEL_COUNT; led++) {
     leds[led] = CRGB::Black;
@@ -196,6 +213,44 @@ void showTurnTracker() {
   }
 
   FastLED.show();
+}
+
+void showBatteryMonitor() {
+  float vbat = analogRead(VBATPIN);
+  vbat *= 2;     // voltage divided by 2, so multiply back
+  vbat *= 3.3;   // Multiply by 3.3V, our reference voltage
+  vbat /= 1024;  // convert to voltage
+
+  showBlank();
+  if (vbat > 4.0) {
+    leds[NP_PLAYER_START + 5] = CRGB::Green;
+  } else if (vbat > 3.6) {
+    leds[NP_PLAYER_START + 5] = CRGB::Yellow;
+  } else if (vbat > 3.4) {
+    leds[NP_PLAYER_START + 5] = CRGB::DarkOrange;
+  } else {
+    leds[NP_PLAYER_START + 5] = CRGB::Crimson;
+  }
+  leds[NP_PLAYER_START + 5].nscale8(64);
+
+  FastLED.show();
+}
+
+void showCurrentMode() {
+  switch (currTrackerMode) {
+    case numPlayerSelect:
+      showNumPlayerSelect();
+      break;
+    case randomColorAssign:
+      showColorAssign();
+      break;
+    case turnTracker:
+      showTurnTracker();
+      break;
+    case batteryMonitor:
+      showBatteryMonitor();
+      break;
+  }
 }
 
 void blinkTurnTracker() {
@@ -265,7 +320,7 @@ void shufflePlayOrder() {
     }
     turnState.activePlayer = turnState.playOrder[0];
     showTurnTracker();
-    delay(150); 
+    delay(150);
   }
 }
 
@@ -391,6 +446,9 @@ void loop() {
   unsigned long now = millis();
   if (currTrackerMode == randomColorAssign && now != lastTick && now % 50 == 0) {
     randomAssignTick();
+  }
+  if (currTrackerMode == batteryMonitor && now != lastTick && now % 1000 == 0) {
+    showBatteryMonitor();
   }
   lastTick = now;
 }
