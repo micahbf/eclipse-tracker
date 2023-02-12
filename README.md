@@ -1,4 +1,4 @@
-This repo contains everything things needed to make an Eclipse turn tracker.
+This repo contains everything needed to make an Eclipse turn tracker.
 
 ![Eclipse turn tracker](/tracker.jpeg)
 
@@ -18,3 +18,6 @@ Parts used were:
 - 4 x M2x5 self-tapping screws to mount the Feather
 - 6 x M3x8 countersunk screws to attach the top
 - 6 x M3 threaded inserts
+
+I might get around to documenting more, but until then, get in touch with me if you have any questions!
+micah@xlmpq.com
