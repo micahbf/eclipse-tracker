@@ -67,6 +67,7 @@ Parts used were:
 - [16mm Panel Mount Momentary Pushbutton - Red](https://www.adafruit.com/product/1445)
 - [Lithium Ion Polymer Battery - 3.7v 2500mAh](https://www.adafruit.com/product/328)
 - [SW-R3-1A-A-1-0 Subminiature Rocker Switch](https://www.digikey.com/short/hp38423t)
+- [680uF electrolytic capacitor](https://www.digikey.com/short/7tjn93td)
 - 4 x M2x5 self-tapping screws to mount the Feather
 - 6 x M3x8 countersunk screws to attach the top
 - 6 x M3 threaded inserts
