@@ -29,7 +29,18 @@ The tracker has a few modes, from startup:
 
 The [tracker.ino](/tracker/tracker.ino) file is an Arduino sketch. I used an ATmega 328P based Arduino, specifically an Adafruit Feather 328P.
 
-Also included is a Fusion 360 file for the enclosure.
+Also included is the source Fusion 360 file for the enclosure, and individual 3MF files for the three parts. The parts are:
+
+- Main body
+- Lid
+- Indicators
+
+The main body and lid are pretty straightforward - I printed them with PLA using 0.2mm layer height.
+
+The indicators need to be printed in 2 colors - an opaque color for the bottom where the NeoPixels are mounted,
+and a translucent color for the indicators themselves.
+
+![Detail of the indicator slicing](./indicators.png)
 
 ## Parts
 
