@@ -71,6 +71,8 @@ Parts used were:
 - 6 x M3x8 countersunk screws to attach the top
 - 6 x M3 threaded inserts
 
+![Tracker internals](./internals.jpeg)
+
 ## Oh hi
 
 I might get around to documenting more, but until then, get in touch with me if you have any questions!
