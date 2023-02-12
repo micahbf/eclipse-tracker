@@ -7,22 +7,27 @@ This repo contains everything needed to make an Eclipse turn tracker.
 The tracker has a few modes, from startup:
 
 1. Select number of players
-  - hit the arcade button to change the number of players, then double tap to confirm
+
+- hit the arcade button to change the number of players, then double tap to confirm
+
 2. Random draft
-  - Species are drafted randomly. Each player hits the button to get assigned their species
-  - Pressing the undo button goes back to re-draft the player who last drafted
-  - After all players have drafted, play order is shuffled
+
+- Species are drafted randomly. Each player hits the button to get assigned their species
+- Pressing the undo button goes back to re-draft the player who last drafted
+- After all players have drafted, play order is shuffled
+
 3. Turn tracking
-  - The play order is displayed on the row of lights
-  - The current player is shown by the button light
-  - When the current player is done with their turn, they hit the button and it advances to the next plyaer
-  - If the current player passes, they double-tap the arcade button. Their turn order light is dimmed and they are removed from the play order.
-  - After all players pass, the pass order is used to set the new play order and all players are reset
-  - The undo button reverts whatever the last button press did
+
+- The play order is displayed on the row of lights
+- The current player is shown by the button light
+- When the current player is done with their turn, they hit the button and it advances to the next plyaer
+- If the current player passes, they double-tap the arcade button. Their turn order light is dimmed and they are removed from the play order.
+- After all players pass, the pass order is used to set the new play order and all players are reset
+- The undo button reverts whatever the last button press did
 
 ## This Repo
 
-The [tracker.ino](/tracker.ino) file is an Arduino sketch. I used an ATmega 328P based Arduino, specifically an Adafruit Feather 328P.
+The [tracker.ino](/tracker/tracker.ino) file is an Arduino sketch. I used an ATmega 328P based Arduino, specifically an Adafruit Feather 328P.
 
 Also included is a Fusion 360 file for the enclosure.
 
