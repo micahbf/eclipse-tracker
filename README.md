@@ -18,6 +18,7 @@ The tracker has a few modes, from startup:
   - When the current player is done with their turn, they hit the button and it advances to the next plyaer
   - If the current player passes, they double-tap the arcade button. Their turn order light is dimmed and they are removed from the play order.
   - After all players pass, the pass order is used to set the new play order and all players are reset
+  - The undo button reverts whatever the last button press did
 
 ## This Repo
 
